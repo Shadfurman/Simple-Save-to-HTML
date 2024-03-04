@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      /* Your CSS styles */
+      .tab {
+        cursor: pointer;
+        padding: 10px;
+        border: 1px solid #ccc;
+        display: inline-block;
+        background-color: #f9f9f9;
+      }
+      .tab.active {
+        background-color: #ddd;
+      }
+      .content {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-top: -1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="tabs">
+      <div class="tab active" onclick="showTab('html')">HTML</div>
+      <div class="tab" onclick="showTab('css')">CSS</div>
+    </div>
+    <div id="htmlContent" class="content">
+      <textarea id="htmlTextarea" style="width:100%; height:200px;"><?= htmlOutput; ?></textarea>
+      <label for="htmlFilename">Filename: </label>
+      <input type="text" id="htmlFilename" name="htmlFilename" value="output.html"><br>
+      <label for="fullPageHtml">Full Page HTML:</label>
+      <input onclick="handleFullPageHtmlCheckbox()" type="checkbox" id="fullPageHtml" name="fullPageHtml"><br>
+      <button onclick="copyToClipboard()">Copy to Clipboard</button>
+      <button onclick="google.script.run.withSuccessHandler(onSaveComplete).saveToGoogleDocs(getContent(), getFilename());">Save to Docs</button>
+      <!-- <button onclick="google.script.run.saveToGoogleDocs(getContent(), getFilename())">Save to Docs</button> -->
+      <button onclick="downloadContent('html')">Download HTML</button>
+    </div>
+    <div id="cssContent" class="content" style="display: none;">
+      <textarea id="cssTextarea" style="width:100%; height:200px;"><?= cssOutput; ?></textarea>
+      <label for="cssFilename">Filename: </label>
+      <input type="text" id="cssFilename" name="cssFilename" value="styles.css"><br>
+      <button onclick="copyToClipboard()">Copy to Clipboard</button>
+      <button onclick="google.script.run.withSuccessHandler(onSaveComplete).saveToGoogleDocs(getContent(), getFilename());">Save to Docs</button>
+      <button onclick="downloadContent('css')">Download CSS</button>
+    </div>
+    <p>by: <a href="http://www.shadfurman.com/">Shadfurman</a></p>
+    <p id="error-message"><?= errorMessage; ?></p>
+    <script>
+      var content = document.getElementById('htmlContent');
+      var filename = document.getElementById('htmlFilename');
+      var savedHtmlTextareaContent = <?= htmlOutput; ?>;
+
+      function onSaveComplete(response) {
+        updateErrorMessage(response);
+      }
+      
+      function showTab(tab) {
+        var htmlContent = document.getElementById('htmlContent');
+        var cssContent = document.getElementById('cssContent');
+        var htmlFilename = document.getElementById('htmlFilename');
+        var cssFilename = document.getElementById('cssFilename');
+        var tabs = document.querySelectorAll('.tab');
+
+        if (tab === 'html') {
+          tabs[0].classList.add('active');
+          tabs[1].classList.remove('active');
+          content = htmlContent;
+          filename = htmlFilename;
+          handleFullPageHtmlCheckbox();
+          htmlContent.style.display = 'block';
+          cssContent.style.display = 'none';
+        } else if (tab === 'css') {
+          tabs[0].classList.remove('active'); 
+          tabs[1].classList.add('active');
+          content = cssContent;
+          filename = cssFilename;
+          htmlContent.style.display = 'none';
+          cssContent.style.display = 'block';
+        }
+      }
+
+      function copyToClipboard() {
+        var copyText = content.querySelector('textarea');
+        copyText.select();
+        document.execCommand("copy");
+      }
+
+      function getContent() {
+        return content.querySelector('textarea').value;
+      }
+
+      function getFilename() {
+        return content.querySelector('input').value;
+      }
+
+      function handleFullPageHtmlCheckbox() {
+        var includeFullStructure = document.getElementById('fullPageHtml').checked;
+        var htmlContent = '';
+        var htmlTab = document.getElementById('htmlContent');
+
+        if (includeFullStructure) {
+          cssFilename = document.getElementById('cssFilename').value;
+          htmlContent = `<!DOCTYPE html>\n<html>\n<head>\n<title><?= documentName ?></title>\n<link rel="stylesheet" href="${cssFilename}">\n</head>\n<body>\n${savedHtmlTextareaContent}\n</body>\n</html>\n`;
+        } else {
+          htmlContent = savedHtmlTextareaContent;
+        }
+        htmlTab.querySelector('textarea').value = htmlContent;
+      }
+
+      function downloadContent() {
+        var text = getContent(); // Get the value from the active content's textarea
+        var filename = getFilename();
+
+        var blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+      }
+
+      function updateErrorMessage(errorMessage) {
+        var errorMessageElement = document.getElementById('error-message');
+        errorMessageElement.innerHTML = errorMessage;
+      }
+    </script>
+  </body>
+</html>
